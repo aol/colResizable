@@ -280,6 +280,9 @@
         }
         if(!t.f) applyBounds(t);	//if not fixed mode, then apply bounds to obtain real width values
         syncGrips(t);				//the grips are updated
+        if (t.opt.onColumnResized) {
+			return t.opt.onColumnResized(t.c); 
+		}
         if (cb) { e.currentTarget = t[0]; cb(e); }	//if there is a callback function, it is fired
 		if(t.p && S) memento(t); 						//if postbackSafe is enabled and there is sessionStorage support, the new layout is serialized and stored
 		drag = null;									//since the grip's dragging is over									
@@ -325,6 +328,9 @@
 				//c.l locks the column, telling us that its c.w is outdated									
 			}
 			syncGrips(t.addClass(SIGNATURE));
+			if (t.opt.onColumnResized) { 
+				return t.opt.onColumnResized(t.c); 
+			}
 		} 
 		
 	};		
@@ -360,7 +366,8 @@
 				keepOriginalColumnWidths: false,   //preserve original col widths in case they are not all the same
 				//events:
 				onDrag: null, 					//callback function to be fired during the column resizing process if liveDrag is enabled
-				onResize: null					//callback function fired when the dragging process is over
+				onResize: null,					//callback function fired when the dragging process is over
+				onColumnResized: null 
             }			
 			var options =  $.extend(defaults, options);			
             return this.each(function() {				

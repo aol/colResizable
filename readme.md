@@ -104,7 +104,7 @@ ___
 It behaves in exactly the same way than the previous attribute but applied to the right margin.
 ___
 
-* **keepOriginalColumnWidths**: [type: boolean] [default: false] [version: 1.3] 
+* **keepOriginalColumnWidths**: [type: boolean] [default: false]
 
 If set to true, it gives the ability to keep the original column widths of the table.
  
@@ -118,3 +118,9 @@ ___
 * **onDrag**: [type: callback function] [default: null] [version: 1.1] 
 
 This event is fired while dragging a column anchor if liveDrag is enabled. It can be useful if the table is being used as a multiple range slider. The callback function can obtain a reference to the updated table through the currentTarget attribute of the event retrieved by parameters
+
+___
+
+* **onColumnResized**: [type: callback function] [default: null]
+
+If a callback function is supplied it will be fired when the user has ended dragging a column anchor altering the previous table layout. The callback returns an array of the updated table column headers
