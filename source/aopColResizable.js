@@ -1,3 +1,12 @@
+/**
+    jQuery plug-in originally by Alvaro Prieto Lauroba
+    Licences: MIT & GPL
+
+    The original plugin code has been updated for better readabilty and maintenance
+    Also, the parts of the plug-in that weren't used on our project have been remove
+
+*/
+
 (function($){   
 
     var drag = null;  //reference to the current grip that is being dragged
