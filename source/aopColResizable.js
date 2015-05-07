@@ -9,14 +9,14 @@
 
 (function($){   
 
-    var drag = null;  //reference to the current grip that is being dragged
-    var tables = [];  //array of the already processed tables (table.id as key)
-    var count = 0;   //internal count to create unique IDs when needed.  
+    var activeGrip = null;
+    var tables = [];
+    var tableUniqueId = 0;
     
-    var SIGNATURE ="JColResizer";
-    var FLEX = "JCLRFlex";
+    var SIGNATURE ="aop-col-resizer";
+    var FLEX = "aop-resizable-table-flex";
     var ie = navigator.userAgent.indexOf('Trident/4.0')>0;
-    $("head").append("<style type='text/css'>  .JColResizer{table-layout:fixed;} .JColResizer td, .JColResizer th{overflow:hidden;}  .JCLRgrips{ height:0px; position:relative;} .JCLRgrip{margin-left:-5px; position:absolute; z-index:5; } .JCLRgrip .JColResizer{position:absolute;background-color:red;filter:alpha(opacity=1);opacity:0;width:10px;height:100%;cursor: e-resize;top:0px} .JCLRLastGrip{position:absolute; width:1px; } .JCLRgripDrag{ border-left:1px dotted black;    } .JCLRFlex{width:auto!important;}</style>");
+    $("head").append("<style type='text/css'>  .aop-col-resizer{table-layout:fixed;} .aop-col-resizer td, .aop-col-resizer th{overflow:hidden;}  .aop-resizable-table-grips{ height:0px; position:relative;} .aop-resizable-table-grip{margin-left:-5px; position:absolute; z-index:5; } .aop-resizable-table-grip .aop-col-resizer{position:absolute;background-color:red;filter:alpha(opacity=1);opacity:0;width:10px;height:100%;cursor: e-resize;top:0px} .aop-last-resizable-table-grip{position:absolute; width:1px; } .aop-resizable-table-grip-drag{ border-left:1px dotted black;    } .aop-resizable-table-flex{width:auto!important;}</style>");
     
     /**
      * Function to allow column resizing for table objects. It is the starting point to apply the plugin.
@@ -29,7 +29,7 @@
         if(table.opt.disable) {
             return destroy(table);
         }
-        var id = table.id = table.attr("id") || SIGNATURE+count++;
+        var id = table.id = table.attr("id") || SIGNATURE+tableUniqueId++;
         if(!table.is("table") || tables[id]) {
             return;
         } 
@@ -37,7 +37,7 @@
         $.each($("th", table).filter(":visible").not(".nonResizable"), function () {
             table.originalColumnWidths.push($(this).width());
         });
-        table.addClass(SIGNATURE).attr("id", id).before('<div class="JCLRgrips"/>');
+        table.addClass(SIGNATURE).attr("id", id).before('<div class="aop-resizable-table-grips"/>');
         table.grips = [];
         table.columns = [];
         table.wid = table.width();
@@ -73,12 +73,12 @@
         table.len = thead.length;
         thead.each(function(i) {
             var column = $(this);
-            var grip = $(table.gripsContainer.append('<div class="JCLRgrip"></div>')[0].lastChild);
+            var grip = $(table.gripsContainer.append('<div class="aop-resizable-table-grip"></div>')[0].lastChild);
             grip.append(table.opt.gripInnerHtml).append('<div class="'+SIGNATURE+'"></div>');
 
             if(i == table.len - 1) {
                 if(!table.opt.enableResizeOnLastGrip || !table.opt.enableResizeOnLastGrip(table)) {
-                    grip.addClass("JCLRLastGrip");
+                    grip.addClass("aop-last-resizable-table-grip");
                     grip.html("");
                 }     
             }
@@ -127,7 +127,7 @@
     * @param {bool} isOver - to identify when the function is being called from the onGripDragOver event    
     */
     var syncCols = function(table, index, isOver) {
-        var increase = drag.x - drag.left, 
+        var increase = activeGrip.x - activeGrip.left, 
             draggedCol = table.columns[index],
             nextCol = table.columns[index+1];
         var draggedColNewWidth = draggedCol.wid + increase,
@@ -141,31 +141,30 @@
     };
 
     /**
-     * ?????
      * Event handler used while dragging a grip. It checks if the next grip's position is valid and updates it. 
      * @param {event} e - mousemove event binded to the window object
      */
     var onGripDrag = function(e) {
-        if(!drag) {
+        if(!activeGrip) {
             return;
         }
-        var table = drag.table;
-        var draggedCol = table.columns[drag.i];
-        var nextCol = table.columns[drag.i + 1];
+        var table = activeGrip.table;
+        var draggedCol = table.columns[activeGrip.i];
+        var nextCol = table.columns[activeGrip.i + 1];
         var originalX = e.pageX;
-        var x =  originalX - drag.originalX + drag.left;
-        var minWidth = table.opt.minWidth, i = drag.i;
+        var x =  originalX - activeGrip.originalX + activeGrip.left;
+        var minWidth = table.opt.minWidth, i = activeGrip.i;
         var l = table.cellSpace * 1.5 + minWidth + table.outerBorder;
         var last = i == table.len - 1;
         var min = i? table.grips[i - 1].position().left + table.cellSpace + minWidth: l;
         var max = (i == table.len - 1) ? table.wid - l : table.grips[i + 1].position().left - table.cellSpace - minWidth;
 
         x = Math.max(min, Math.min(max, x));
-        drag.x = x;
-        drag.css("left", x + "px");
+        activeGrip.x = x;
+        activeGrip.css("left", x + "px");
         if (last) {
-            drag.wid = draggedCol.wid + x - drag.left;
-            draggedCol.width(drag.wid);
+            activeGrip.wid = draggedCol.wid + x - activeGrip.left;
+            draggedCol.width(activeGrip.wid);
             table.wid = table.width();
         } else {
             syncCols(table, i);
@@ -173,7 +172,7 @@
         syncGrips(table);
         if (table.opt.onDrag) {
             e.currentTarget = table[0];
-            table.opt.onDrag(e, drag.i, draggedCol.width(), nextCol ? nextCol.width() : undefined);
+            table.opt.onDrag(e, activeGrip.i, table.columns);
         }         
         return false;  //prevent text selection while dragging
     };
@@ -187,21 +186,21 @@
          .unbind('touchmove.' + SIGNATURE + ' mousemove.' + SIGNATURE);
 
         $("head :last-child").remove();
-        if(!drag) {
+        if(!activeGrip) {
             return;
         }
 
-        drag.removeClass(drag.table.opt.draggingClass);
-        var table = drag.table;
-        var index = drag.i;
+        activeGrip.removeClass(activeGrip.table.opt.draggingClass);
+        var table = activeGrip.table;
+        var index = activeGrip.i;
         var last = index == table.len - 1;
         var col = table.grips[index].column;
         if(last) {
-            col.width(drag.wid);
-            col.wid = drag.wid;
+            col.width(activeGrip.wid);
+            col.wid = activeGrip.wid;
             if (table.opt.enableResizeOnLastGrip && !table.opt.enableResizeOnLastGrip(table)) {
-                drag.addClass("JCLRLastGrip");
-                drag.html("");
+                activeGrip.addClass("aop-last-resizable-table-grip");
+                activeGrip.html("");
             }
         } else {
             syncCols(table, index, true);
@@ -214,12 +213,11 @@
             e.currentTarget = t[0];
             table.opt.onResize(e);
         }
-        drag = null;
+        activeGrip = null;
     };  
     
     
     /**
-     * ?????
      * Event handler fired when the grip's dragging is about to start. Its main goal is to set up events 
      * and store some values used while dragging.
      * @param {event} e - grip's mousedown event
@@ -234,7 +232,7 @@
                    .bind('touchend.' + SIGNATURE + ' mouseup.' + SIGNATURE, onGripDragOver);
         $("head").append("<style type='text/css'>*{cursor:" + table.opt.dragCursor + "!important}</style>");
         grip.addClass(table.opt.draggingClass);
-        drag = grip;
+        activeGrip = grip;
         if(table.columns[gripData.i].locked) {
             for(var i=0,col; i<table.len; i++) {
                 col = table.columns[i];
@@ -283,7 +281,7 @@
     $.fn.extend({  
         colResizable: function(options) {
             var defaults = {
-                draggingClass: 'JCLRgripDrag',  //css-class used when a grip is being dragged (for visual feedback purposes)
+                draggingClass: 'aop-resizable-table-grip-drag',  //css-class used when a grip is being dragged (for visual feedback purposes)
                 gripInnerHtml: '',              //if it is required to use a custom grip it can be done using some custom HTML              
                 minWidth: 60,                   //minimum width value in pixels allowed for a column 
                 hoverCursor: "e-resize",        //cursor to be used on grip hover
