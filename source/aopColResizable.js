@@ -33,10 +33,13 @@
         if(!table.is("table") || tables[id]) {
             return;
         } 
-        table.originalColumnWidths = [];
-        $.each($("th", table).filter(":visible").not(".nonResizable"), function () {
-            table.originalColumnWidths.push($(this).width());
-        });
+
+        table.originalColumnWidths = table.opt.originalColumnWidths;
+        if (table.originalColumnWidths.length == 0) {
+            $.each($("th", table).filter(":visible").not(".nonResizable"), function (col) {
+                table.originalColumnWidths.push($(this).width());
+            });
+        }
         table.addClass(SIGNATURE).attr("id", id).before('<div class="aop-resizable-table-grips"/>');
         table.grips = [];
         table.columns = [];
@@ -82,12 +85,12 @@
                     grip.html("");
                 }     
             }
-            
+
             grip.bind('touchstart mousedown', onGripMouseDown);
             grip.table = table;
             grip.i = i;
             grip.column = column;
-            column.wid = (table.opt && table.opt.keepOriginalColumnWidths) ? table.originalColumnWidths[i] : column.width() > 0 ? column.width() : table.opt.minWidth;
+            column.wid = (table.originalColumnWidths && table.originalColumnWidths.length>0) ? table.originalColumnWidths[i] : column.width() > 0 ? column.width() : table.opt.minWidth;
             table.grips.push(grip);
             table.columns.push(column);
             column.width(column.wid).removeAttr("width");
@@ -173,10 +176,10 @@
         if (table.opt.onDrag) {
             e.currentTarget = table[0];
             table.opt.onDrag(e, activeGrip.i, table.columns);
-        }         
+        }
         return false;  //prevent text selection while dragging
     };
-    
+  
 
     /**
      * Event handler fired when the dragging is over, updating table layout
@@ -214,9 +217,8 @@
             table.opt.onResize(e);
         }
         activeGrip = null;
-    };  
-    
-    
+    };
+
     /**
      * Event handler fired when the grip's dragging is about to start. Its main goal is to set up events 
      * and store some values used while dragging.
@@ -238,12 +240,11 @@
                 col = table.columns[i];
                 col.locked = false;
                 col.wid = col.width();
-            }  
-        }       
+            }
+        }
         return false; //prevent text selection
     };
-    
-    
+
     /**
      * Event handler fired when the browser is resized. The main purpose of this function is to update
      * table layout according to the browser's size synchronizing related grips 
@@ -287,12 +288,12 @@
                 hoverCursor: "e-resize",        //cursor to be used on grip hover
                 dragCursor: "e-resize",         //cursor to be used while dragging
                 disable: false,                 //disables all the enhancements performed in a previously colResized table  
-                keepOriginalColumnWidths: false,   //preserve original col widths in case they are not all the same
+                originalColumnWidths: null,   //preserve original col widths in case they are not all the same
                 onDrag: null,                   //callback function to be fired during the column resizing process
                 onResize: null,                 //callback function fired when the dragging process is over
                 onColumnResized: null,
                 enableResizeOnLastGrip: null
-            }           
+            }
             var options =  $.extend(defaults, options);
             return this.each(function() {
                 init( this, options);

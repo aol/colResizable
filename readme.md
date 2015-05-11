@@ -56,9 +56,9 @@ ___
 Defines the cursor that will be used while the user is resizing a column.
 ___
 
-* **keepOriginalColumnWidths**: [type: boolean] [default: false]
+* **originalColumnWidths**: [type: array] [default: null]
 
-If set to true, it gives the ability to keep the original column widths of the table.
+The user can pass an array of columns widths which will be prioritized if set.
  
 ## Events
 
