@@ -157,7 +157,7 @@
         var originalX = e.pageX;
         var x =  originalX - activeGrip.originalX + activeGrip.left;
         var minWidth = table.opt.minWidth, i = activeGrip.i;
-        var l = table.cellSpace * 1.5 + minWidth + table.outerBorder;
+        var l = table.cellSpace * 1.5 + minWidth + table.outerBorder + (table.find(".nonResizable").length > 0 ? 26 : 0);
         var last = i == table.len - 1;
         var min = i? table.grips[i - 1].position().left + table.cellSpace + minWidth: l;
         var max = (i == table.len - 1) ? table.wid - l : table.grips[i + 1].position().left - table.cellSpace - minWidth;
