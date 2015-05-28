@@ -210,7 +210,7 @@
         }
         syncGrips(table);
         if (table.opt.onColumnResized) {
-            return table.opt.onColumnResized(table.columns); 
+            table.opt.onColumnResized(table.columns); 
         }
         if(table.opt.onResize) {
             e.currentTarget = t[0];
@@ -272,7 +272,15 @@
 
 
     //bind resize event, to update grips position 
-    $(window).bind('resize.' + SIGNATURE, onResize);
+    $(window).bind('resize.' + SIGNATURE, function () {
+        for(table in tables) {
+            var table = tables[table];
+            syncGrips(table);
+            if (table.opt.onColumnResized) {
+                table.opt.onColumnResized(table.columns); 
+            }
+        }
+    });
 
 
     /**
